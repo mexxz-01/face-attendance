@@ -61,7 +61,7 @@ async function handleAdminLogin(event) {
             revealAdminDashboard();
             loadAttendanceRecords();
         } else {
-            errDiv.textContent = data.error || 'Access Denied: Invalid Password';
+            errDiv.textContent = data.detail || data.error || 'Access Denied: Invalid Password';
             pwInput.value = '';
             pwInput.focus();
         }
@@ -202,7 +202,7 @@ async function toggleAdminRole(studentName, makeAdmin) {
         if (data.success) {
             loadAttendanceRecords();
         } else {
-            alert('Failed to update role: ' + (data.error || 'Server error'));
+            alert('Failed to update role: ' + (data.detail || data.error || 'Server error'));
         }
     } catch (err) {
         alert('Network fault: ' + err.message);
@@ -225,7 +225,7 @@ async function deleteStudentRecord(studentName) {
         if (data.success) {
             loadAttendanceRecords();
         } else {
-            alert('Failed to delete student: ' + (data.error || 'Unknown error'));
+            alert('Failed to delete student: ' + (data.detail || data.error || 'Unknown error'));
         }
     } catch (err) {
         alert('Network fault: ' + err.message);
@@ -234,7 +234,29 @@ async function deleteStudentRecord(studentName) {
 
 /* ── 4. Excel Export (.xlsx) ──────────────────────────────────────────────── */
 
-function exportToExcel() {
+async function exportToExcel() {
+    try {
+        /* Attempt High-Performance Server-Side Export */
+        const res = await fetch('/api/admin/export/excel', {
+            headers: { 'Authorization': `Bearer ${activeSessionToken}` }
+        });
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Attendance_${currentAttendanceData ? currentAttendanceData.date : 'export'}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            return;
+        }
+    } catch (e) {
+        console.warn('Server-side excel failed, using client fallback', e);
+    }
+
+    /* Client-side Fallback via SheetJS */
     if (!currentAttendanceData || !currentAttendanceData.users || currentAttendanceData.users.length === 0) {
         alert('No attendance data available to export.');
         return;
@@ -251,22 +273,34 @@ function exportToExcel() {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-
-    ws['!cols'] = [
-        { wch: 12 },
-        { wch: 30 },
-        { wch: 14 },
-        { wch: 20 },
-        { wch: 16 }
-    ];
-
-    const filename = `Attendance_${currentAttendanceData.date}.xlsx`;
-    XLSX.writeFile(wb, filename);
+    XLSX.writeFile(wb, `Attendance_${currentAttendanceData.date}.xlsx`);
 }
 
 /* ── 5. PDF Export (.pdf) ─────────────────────────────────────────────────── */
 
-function exportToPdf() {
+async function exportToPdf() {
+    try {
+        /* Attempt High-Performance Server-Side Export */
+        const res = await fetch('/api/admin/export/pdf', {
+            headers: { 'Authorization': `Bearer ${activeSessionToken}` }
+        });
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Attendance_${currentAttendanceData ? currentAttendanceData.date : 'export'}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            return;
+        }
+    } catch (e) {
+        console.warn('Server-side PDF failed, using client fallback', e);
+    }
+
+    /* Client-side Fallback via jsPDF */
     if (!currentAttendanceData || !currentAttendanceData.users || currentAttendanceData.users.length === 0) {
         alert('No attendance data available to export.');
         return;
@@ -287,10 +321,6 @@ function exportToPdf() {
     doc.setTextColor(255, 255, 255);
     doc.text(`Biometric Facial Attendance Record  |  Date: ${currentAttendanceData.date}`, 105, 24, { align: "center" });
 
-    doc.setTextColor(60, 60, 60);
-    doc.setFontSize(10);
-    doc.text(`Total Enrolled: ${currentAttendanceData.total}   |   Present: ${currentAttendanceData.present}   |   Absent: ${currentAttendanceData.absent}`, 14, 42);
-
     const tableData = currentAttendanceData.users.map((u, i) => [
         (i + 1).toString(),
         u.name,
@@ -307,23 +337,6 @@ function exportToPdf() {
             fillColor: [122, 12, 26],
             textColor: [245, 232, 190],
             fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-            fillColor: [250, 246, 247]
-        },
-        styles: {
-            fontSize: 9.5,
-            cellPadding: 4
-        },
-        didParseCell: function(data) {
-            if (data.section === 'body' && data.column.index === 3) {
-                if (data.cell.raw === 'PRESENT') {
-                    data.cell.styles.textColor = [184, 144, 37];
-                    data.cell.styles.fontStyle = 'bold';
-                } else {
-                    data.cell.styles.textColor = [168, 20, 38];
-                }
-            }
         }
     });
 
