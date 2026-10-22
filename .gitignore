@@ -12,3 +12,8 @@ data/*.dat
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+__pycache__/
+*.pyc
+data/*.db
+
