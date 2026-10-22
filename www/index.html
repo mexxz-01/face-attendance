@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Attendance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <div class="app-shell">
+        <!-- Top Luxury Header -->
+        <header class="luxury-nav">
+            <div class="brand">
+                <div class="brand-crest">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-title">ATTENDANCE SYSTEM</h1>
+                    <p class="brand-sub">Biometric Recognition</p>
+                </div>
+            </div>
+
+            <div class="system-status" id="systemStatus">
+                <span class="status-indicator"></span>
+                <span id="statusLabel">Loading Engine...</span>
+            </div>
+        </header>
+
+        <!-- Main Viewport -->
+        <main class="kiosk-stage">
+            <div class="scanner-console">
+                <!-- Video Viewfinder Frame -->
+                <div class="viewfinder" id="viewfinder">
+                    <video id="webcam" autoplay muted playsinline></video>
+                    <canvas id="canvasOverlay"></canvas>
+
+                    <!-- Corner Guides -->
+                    <div class="reticle-corner c-tl"></div>
+                    <div class="reticle-corner c-tr"></div>
+                    <div class="reticle-corner c-bl"></div>
+                    <div class="reticle-corner c-br"></div>
+
+                    <!-- Ambient Center Pulse -->
+                    <div class="scanner-pulse" id="scannerPulse"></div>
+                </div>
+
+                <!-- Live Message Banner -->
+                <div class="live-banner banner-standby" id="liveBanner">
+                    <div class="banner-icon" id="bannerIcon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 6v6l4 2"></path>
+                        </svg>
+                    </div>
+                    <div class="banner-body">
+                        <h2 class="banner-title" id="bannerTitle">Initializing Camera</h2>
+                        <p class="banner-desc" id="bannerDesc">Please position your face directly in front of the lens</p>
+                    </div>
+                </div>
+
+                <!-- Registration Modal / Drawer for New Face -->
+                <div class="register-drawer" id="registerDrawer">
+                    <div class="drawer-header">
+                        <span class="drawer-badge">NEW FACE DETECTED</span>
+                        <p class="drawer-prompt">Enter your name to register</p>
+                    </div>
+                    <form class="drawer-form" onsubmit="submitRegistration(event)">
+                        <div class="input-wrap">
+                            <input type="text" id="studentNameInput" placeholder="Enter Full Name..." autocomplete="off">
+                        </div>
+                        <button type="submit" class="btn-gold" id="btnRegister">
+                            <span>Register &amp; Mark Present</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <!-- Minimal Footer -->
+        <footer class="luxury-footer">
+            <span>SECURE BIOMETRIC IDENTIFICATION</span>
+        </footer>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

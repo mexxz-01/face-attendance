@@ -1,0 +1,14 @@
+# Binaries & build artifacts
+server.exe
+*.obj
+*.o
+*.pdb
+
+# Local biometric database files
+data/*.dat
+!data/.gitkeep
+
+# Operating System files
+Thumbs.db
+Desktop.ini
+.DS_Store

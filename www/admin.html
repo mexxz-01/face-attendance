@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System &mdash; Admin Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <!-- SheetJS for Excel (.xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF & autoTable for PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body style="background-color: var(--bg-base);">
+    <div class="bg-mesh"></div>
+
+    <!-- ═══ SECURE LOCK SCREEN ═══ -->
+    <div class="admin-lockscreen" id="lockScreen">
+        <div class="lock-card">
+            <div class="lock-icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h2 class="lock-title">ADMINISTRATOR ACCESS</h2>
+            <p class="lock-subtitle">Enter security key or scan admin face at terminal</p>
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="lock-input-wrap">
+                    <input type="password" id="adminPassword" placeholder="Access Password..." autocomplete="current-password" autofocus>
+                </div>
+                <button type="submit" class="btn-gold" id="loginBtn" style="width: 100%; justify-content: center;">
+                    Unlock Dashboard
+                </button>
+                <div class="lock-error" id="lockError"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══ ADMIN DASHBOARD CONTENT ═══ -->
+    <div class="admin-container" id="adminContent" style="display: none; position: relative; z-index: 5;">
+        <!-- Header Bar -->
+        <header class="admin-header-bar">
+            <div>
+                <h1 class="brand-title" style="font-size: 1.6rem; text-align: left;">ATTENDANCE ARCHIVE</h1>
+                <p class="brand-sub" style="text-align: left; margin-top: 0.3rem;" id="adminDate">Date: Loading...</p>
+            </div>
+            <div class="admin-actions-bar">
+                <button class="btn-action btn-excel" onclick="exportToExcel()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Download Excel (.xlsx)
+                </button>
+                <button class="btn-action btn-pdf" onclick="exportToPdf()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <polyline points="9 15 12 12 15 15"></polyline>
+                    </svg>
+                    Download PDF
+                </button>
+                <a href="/" class="btn-action" style="background: rgba(122, 12, 26, 0.4); color: var(--gold-300); text-decoration: none; border: 1px solid var(--gold-border);">
+                    Terminal Kiosk
+                </a>
+                <button class="btn-action btn-logout" onclick="logoutAdmin()">
+                    Sign Out
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <section class="admin-stats-grid">
+            <div class="admin-stat-card">
+                <div class="admin-stat-val" id="statEnrolled">0</div>
+                <div class="admin-stat-lbl">Total Enrolled</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-val gold" id="statPresent">0</div>
+                <div class="admin-stat-lbl">Confirmed Present</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-val red" id="statAbsent">0</div>
+                <div class="admin-stat-lbl">Absent</div>
+            </div>
+        </section>
+
+        <!-- Attendance Records Table with Role Administration -->
+        <section class="admin-table-wrap">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
+                <div>
+                    <h3 style="font-family: var(--font-heading); color: var(--gold-300); font-size: 1.05rem; letter-spacing: 0.08em;">
+                        ROSTER &amp; PRIVILEGES
+                    </h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+                        Users designated as <strong>Admin</strong> will automatically be redirected to this panel when recognized by the camera.
+                    </p>
+                </div>
+                <input type="text" id="searchInput" oninput="filterAttendanceTable()" placeholder="Search student name..." 
+                       style="padding: 0.6rem 1.1rem; background: var(--bg-input); border: 1px solid var(--gold-border); border-radius: var(--radius-md); color: #fff; font-size: 0.9rem; outline: none;">
+            </div>
+
+            <table class="admin-table" id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">#</th>
+                        <th>Student Name</th>
+                        <th style="width: 140px;">Privilege Role</th>
+                        <th style="width: 150px;">Today's Attendance</th>
+                        <th style="width: 120px;">Date</th>
+                        <th style="width: 180px; text-align: right;">Admin Action</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                            Loading records from database...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="/admin.js"></script>
+</body>
+</html>
